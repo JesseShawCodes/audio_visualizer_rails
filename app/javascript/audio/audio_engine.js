@@ -3,7 +3,7 @@ export default class AudioEngine {
     this.audioContext = new AudioContext()
 
     this.audioElement = new Audio()
-    this.audioElement.src = "https://www.soundjay.com/Human/sounds/human-speech-1.wav"
+    this.audioElement.src = "/audio/piano_song.mp3"
     
     this.source = this.audioContext.createMediaElementSource(this.audioElement)
     
@@ -14,8 +14,6 @@ export default class AudioEngine {
     this.analyser.connect(this.audioContext.destination)
 
     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount)
-
-    this.audioElement.play()
   }
 
   getData() {
