@@ -29,7 +29,7 @@ db-prepare:
 console:
 	docker compose exec web bin/rails console
 
-# Build assets inside the web container
+# Build assets inside the web container (non-watch mode)
 assets-build:
 	docker compose exec web yarn install
 	docker compose exec web yarn build
