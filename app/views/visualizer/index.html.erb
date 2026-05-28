@@ -1,1 +1,25 @@
-<h1>Visualizer</h1>
+<div data-controller="visualizer">
+    <h1>Visualizer</h1>
+    <header>
+        <h1>Audio Visualizer</h1>
+        <button
+            data-action="click->visualizer#toggleFullscreen">
+            Fullscreen
+        </button>
+    </header>
+    <main>
+        <section>
+            <div data-visualizer-target="canvas"></div>
+        </section>
+        <aside>
+            <div>
+                <label>Sensitivity</label>
+                <input type="range" min="0" max="100" value="50" data-visualizer-target="sensitivity" />
+            </div>
+            <div>
+                <label>Color</label>
+                <input type="color" data-visualizer-target="color" />
+            </div>
+        </aside>
+    </main>
+</div>
