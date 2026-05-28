@@ -1,0 +1,2 @@
+class VisualizerController < ApplicationController
+end

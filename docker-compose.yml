@@ -19,7 +19,7 @@ services:
       context: .
       args:
         - RAILS_ENV=development
-    command: ./bin/rails server -b 0.0.0.0
+    command: bash -c "yarn install && yarn build && yarn build:css && ./bin/rails server -b 0.0.0.0"
     ports:
       - "3000:3000"
     environment:
@@ -32,8 +32,10 @@ services:
         condition: service_healthy
     volumes:
       - .:/rails
+      - node_modules:/rails/node_modules
       - bundle_cache:/usr/local/bundle
 
 volumes:
   postgres_data:
   bundle_cache:
+  node_modules:

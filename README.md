@@ -31,9 +31,17 @@ docker compose exec web bin/rails db:prepare
 # Create a migration
 docker compose exec web bin/rails generate migration AddFieldsToModel
 
-# Access the Rails console
+# Open the Rails console
 docker compose exec web bin/rails console
+
+# Manually rebuild assets
+docker compose exec web yarn build
+docker compose exec web yarn build:css
 ```
+
+### Troubleshooting Assets
+
+If you see a `Propshaft::MissingAssetError`, it usually means the JavaScript or CSS hasn't been bundled. The application is configured to build assets automatically when it starts. If you make changes and they don't appear, you can run `make assets-build`.
 
 ### Database Access
 
