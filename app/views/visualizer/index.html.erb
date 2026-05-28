@@ -1,25 +1,116 @@
-<div data-controller="visualizer">
-    <h1>Visualizer</h1>
-    <header>
-        <h1>Audio Visualizer</h1>
-        <button
-            data-action="click->visualizer#toggleFullscreen">
-            Fullscreen
-        </button>
-    </header>
-    <main>
-        <section>
-            <div data-visualizer-target="canvas"></div>
-        </section>
-        <aside>
-            <div>
-                <label>Sensitivity</label>
-                <input type="range" min="0" max="100" value="50" data-visualizer-target="sensitivity" />
-            </div>
-            <div>
-                <label>Color</label>
-                <input type="color" data-visualizer-target="color" />
-            </div>
-        </aside>
-    </main>
+<!-- app/views/visualizer/index.html.erb -->
+
+<div class="h-screen bg-black text-white overflow-hidden flex flex-col"
+     data-controller="visualizer">
+
+  <header class="flex items-center justify-between p-4 border-b border-zinc-800 shrink-0">
+    <div class="flex items-center gap-4">
+      <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">
+        VISUALIZER
+      </h1>
+      <span class="text-xs text-zinc-500 font-mono tracking-widest uppercase mt-1">v1.0.0</span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button
+        data-action="click->visualizer#toggleFullscreen"
+        class="px-3 py-1.5 text-xs font-medium bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 transition-colors rounded uppercase tracking-wider">
+        Fullscreen
+      </button>
+    </div>
+  </header>
+
+  <main class="flex flex-1 overflow-hidden">
+    <!-- Visualization Area -->
+    <section class="flex-1 relative bg-zinc-950">
+      <div
+        data-visualizer-target="canvas"
+        class="w-full h-full flex items-center justify-center">
+        <!-- p5.js canvas will be injected here -->
+      </div>
+      
+      <!-- Ambient Overlay -->
+      <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/20 to-transparent"></div>
+    </section>
+
+    <!-- Controls Panel -->
+    <aside class="w-80 border-l border-zinc-800 bg-black p-6 space-y-8 overflow-y-auto shrink-0">
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <label class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+            Sensitivity
+          </label>
+          <span class="text-[10px] font-mono text-zinc-400" data-visualizer-target="sensitivityValue">50%</span>
+        </div>
+
+        <input type="range"
+               min="1"
+               max="100"
+               value="50"
+               data-action="input->visualizer#updateSensitivity"
+               data-visualizer-target="sensitivitySlider"
+               class="w-full accent-indigo-500 bg-zinc-800 rounded-lg appearance-none cursor-pointer h-1.5">
+      </div>
+
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3">
+          Visual Mode
+        </label>
+
+        <select
+          data-action="change->visualizer#changeVisualizer"
+          data-visualizer-target="visualizerSelect"
+          class="w-full bg-zinc-900 border border-zinc-800 text-sm rounded p-2.5 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+          <option value="particles">Ethereal Particles</option>
+          <option value="bars">Frequency Bars</option>
+          <option value="circle">Pulse Circle</option>
+        </select>
+      </div>
+
+      <div class="pt-6 border-t border-zinc-900">
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3">
+          Information
+        </label>
+        <div class="bg-zinc-950 border border-zinc-900 rounded p-4 space-y-2">
+          <div class="flex justify-between">
+            <span class="text-[10px] text-zinc-600 uppercase">Engine</span>
+            <span class="text-[10px] text-zinc-400 font-mono">p5.js + WebAudio</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[10px] text-zinc-600 uppercase">FPS</span>
+            <span class="text-[10px] text-zinc-400 font-mono" data-visualizer-target="fps">60</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="h-20 border-t border-zinc-800 bg-black flex items-center px-8 gap-8 shrink-0">
+    <button
+      data-action="click->visualizer#playPause"
+      data-visualizer-target="playButton"
+      class="w-12 h-12 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 transition-colors rounded-full shadow-lg shadow-indigo-500/20 group">
+      <svg class="w-5 h-5 fill-white group-hover:scale-110 transition-transform" viewBox="0 0 24 24" data-visualizer-target="playIcon">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    </button>
+
+    <div class="flex-1 flex flex-col gap-2">
+      <div class="flex justify-between items-center">
+        <span class="text-[10px] font-mono text-zinc-500" data-visualizer-target="currentTime">00:00</span>
+        <span class="text-[10px] font-mono text-zinc-500" data-visualizer-target="duration">03:45</span>
+      </div>
+      <div class="relative w-full h-1 bg-zinc-800 rounded-full overflow-hidden group cursor-pointer">
+        <div class="absolute inset-0 bg-indigo-500/30 w-1/3" data-visualizer-target="timeline"></div>
+        <div class="absolute top-0 bottom-0 left-1/3 w-0.5 bg-indigo-400 group-hover:w-1 transition-all"></div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      </svg>
+      <input type="range" min="0" max="100" value="80" class="w-24 accent-zinc-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer">
+    </div>
+  </footer>
 </div>
