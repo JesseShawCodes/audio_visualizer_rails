@@ -45,7 +45,7 @@ services:
       context: .
       args:
         - RAILS_ENV=development
-    command: bash -c "yarn install && yarn build --watch"
+    command: bash -c "yarn install && yarn build:watch"
     volumes:
       - .:/rails
       - node_modules:/rails/node_modules
@@ -59,7 +59,7 @@ services:
       context: .
       args:
         - RAILS_ENV=development
-    command: bash -c "yarn install && yarn build:css --watch"
+    command: bash -c "yarn install && yarn build:css:watch & tail -f /dev/null"
     volumes:
       - .:/rails
       - node_modules:/rails/node_modules
