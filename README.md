@@ -1,24 +1,44 @@
-# README
+# Visualizer
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+A Rails application with a containerized development environment.
 
-Things you may want to cover:
+## Getting Started with Docker
 
-* Ruby version
+The easiest way to run this application is using Docker Compose.
 
-* System dependencies
+### Prerequisites
 
-* Configuration
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) or [Colima](https://github.com/abiosoft/colima) installed.
 
-* Database creation
+### Start the Application
 
-* Database initialization
+To build and start the services (Rails + PostgreSQL):
 
-* How to run the test suite
+```bash
+docker compose up --build
+```
 
-* Services (job queues, cache servers, search engines, etc.)
+The application will be available at `http://localhost:3000`.
 
-* Deployment instructions
+### Running Rails Commands
 
-* ...
+Since the application and database are running inside Docker, you should run Rails commands through `docker compose exec`:
+
+```bash
+# Prepare the database (create/migrate)
+docker compose exec web bin/rails db:prepare
+
+# Create a migration
+docker compose exec web bin/rails generate migration AddFieldsToModel
+
+# Access the Rails console
+docker compose exec web bin/rails console
+```
+
+### Database Access
+
+The PostgreSQL database is exposed on your host at port `5432`. You can connect to it using local tools with:
+- **Host**: `localhost`
+- **Port**: `5432`
+- **User**: `postgres`
+- **Password**: `password`
