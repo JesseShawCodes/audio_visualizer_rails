@@ -1,4 +1,4 @@
-.PHONY: visualizer-start visualizer-stop visualizer-clean web-bash db-bash db-prepare console assets-build
+.PHONY: visualizer-start visualizer-stop visualizer-clean visualizer-test visualizer-bash db-bash db-prepare console bundle-install assets-build fix-permissions
 
 # Start the application and its dependencies
 visualizer-start:
@@ -31,6 +31,15 @@ db-prepare:
 # Open the Rails console inside the web container
 console:
 	docker compose exec web bin/rails console
+
+# Fix permissions for files that need to be updated by the container
+fix-permissions:
+	chmod 666 Gemfile.lock yarn.lock
+
+# Run bundle install inside the web container
+bundle-install:
+	docker compose exec web bundle install
+	@echo "Note: If Gemfile.lock didn't update, try running 'make fix-permissions' first."
 
 # Build assets inside the web container (non-watch mode)
 assets-build:
