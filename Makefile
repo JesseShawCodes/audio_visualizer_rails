@@ -2,7 +2,7 @@
 
 # Start the application and its dependencies
 visualizer-start:
-	docker compose up --build
+	docker compose up --build -d
 
 # Stop the application
 visualizer-stop:
@@ -13,8 +13,11 @@ visualizer-clean:
 	docker compose down -v
 	rm -rf app/assets/builds/*
 
+visualizer-test:
+	bin/rails test
+
 # Bash into the running Rails web container
-web-bash:
+visualizer-bash:
 	docker compose exec web bash
 
 # Bash into the running PostgreSQL database container
