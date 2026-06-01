@@ -2,33 +2,37 @@ import { vi } from 'vitest'
 import 'vitest-canvas-mock'
 
 // Mock AudioContext
-const mockAudioContext = vi.fn().mockImplementation(() => ({
-  createAnalyser: vi.fn().mockReturnValue({
-    fftSize: 256,
-    frequencyBinCount: 128,
-    getByteFrequencyData: vi.fn(),
-    connect: vi.fn(),
-  }),
-  createMediaElementSource: vi.fn().mockReturnValue({
-    connect: vi.fn(),
-  }),
-  destination: {},
-  state: 'suspended',
-  resume: vi.fn().mockResolvedValue(),
-}))
+const mockAudioContext = vi.fn().mockImplementation(function() {
+  return {
+    createAnalyser: vi.fn().mockReturnValue({
+      fftSize: 256,
+      frequencyBinCount: 128,
+      getByteFrequencyData: vi.fn(),
+      connect: vi.fn(),
+    }),
+    createMediaElementSource: vi.fn().mockReturnValue({
+      connect: vi.fn(),
+    }),
+    destination: {},
+    state: 'suspended',
+    resume: vi.fn().mockResolvedValue(),
+  }
+})
 
 vi.stubGlobal('AudioContext', mockAudioContext)
 
 // Mock Audio
-const mockAudio = vi.fn().mockImplementation(() => ({
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  play: vi.fn().mockResolvedValue(),
-  pause: vi.fn(),
-  paused: true,
-  duration: 100,
-  currentTime: 0,
-}))
+const mockAudio = vi.fn().mockImplementation(function() {
+  return {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    play: vi.fn().mockResolvedValue(),
+    pause: vi.fn(),
+    paused: true,
+    duration: 100,
+    currentTime: 0,
+  }
+})
 
 vi.stubGlobal('Audio', mockAudio)
 
