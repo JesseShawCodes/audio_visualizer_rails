@@ -59,6 +59,7 @@ vi.mock('p5', () => {
           frameRate: vi.fn().mockReturnValue(60),
           frameCount: 0,
           windowResized: vi.fn(),
+          resizeCanvas: vi.fn(),
         }
         sketchFn(this.sketch)
       }

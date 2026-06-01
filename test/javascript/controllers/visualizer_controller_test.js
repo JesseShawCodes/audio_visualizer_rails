@@ -2,8 +2,9 @@ import { Application } from "@hotwired/stimulus"
 import VisualizerController from "../../../app/javascript/controllers/visualizer_controller"
 import { waitFor } from "@testing-library/dom"
 import { vi, describe, beforeEach, afterEach, test, expect } from 'vitest'
+import p5 from "p5"
 
-// Mock dependencies of the controller
+// Mock dependencies
 vi.mock("../../../app/javascript/audio/audio_engine", () => {
   return {
     default: class MockAudioEngine {
@@ -23,7 +24,7 @@ vi.mock("../../../app/javascript/audio/audio_engine", () => {
         }
       }
       getData() {
-        return new Uint8Array(128)
+        return new Uint8Array([10, 20, 30])
       }
     }
   }
@@ -32,24 +33,26 @@ vi.mock("../../../app/javascript/audio/audio_engine", () => {
 vi.mock("../../../app/javascript/visualizers/particle_visualizer", () => {
   return {
     default: class MockParticleVisualizer {
-      draw() {}
+      draw = vi.fn()
     }
   }
 })
 
 describe("VisualizerController", () => {
   let application
+  let container
 
   beforeEach(() => {
     application = Application.start()
     application.register("visualizer", VisualizerController)
     
-    document.body.innerHTML = `
+    container = document.createElement("div")
+    container.innerHTML = `
       <div data-controller="visualizer">
         <div data-visualizer-target="canvas" style="width: 800px; height: 600px;"></div>
         <input type="range" data-visualizer-target="sensitivitySlider" value="50">
         <span data-visualizer-target="sensitivityValue">50%</span>
-        <select data-visualizer-target="visualizerSelect">
+        <select data-visualizer-target="visualizerSelect" data-action="change->visualizer#changeVisualizer">
           <option value="particles">Particles</option>
           <option value="bars">Bars</option>
         </select>
@@ -64,117 +67,183 @@ describe("VisualizerController", () => {
         </div>
       </div>
     `
+    document.body.appendChild(container)
   })
 
   afterEach(() => {
     application.stop()
-    document.body.innerHTML = ""
+    container.remove()
+    vi.clearAllMocks()
   })
 
-  test("initializes with default settings", async () => {
-    const el = document.querySelector('[data-controller="visualizer"]')
+  async function getController() {
+    const el = container.querySelector('[data-controller="visualizer"]')
     let controller
-    
     await waitFor(() => {
       controller = application.getControllerForElementAndIdentifier(el, "visualizer")
       expect(controller).not.toBeNull()
     })
+    return controller
+  }
+
+  test("initializes and disconnects correctly", async () => {
+    const controller = await getController()
+    const p5RemoveSpy = vi.spyOn(controller.p5, 'remove')
+    const removeEventSpy = vi.spyOn(document, 'removeEventListener')
 
     expect(controller.settings.sensitivity).toBe(0.5)
-    expect(controller.settings.mode).toBe("particles")
+    
+    // Test disconnect
+    controller.disconnect()
+    expect(p5RemoveSpy).toHaveBeenCalled()
+    expect(removeEventSpy).toHaveBeenCalledWith('keydown', controller.handleKeydown)
+  })
+
+  test("keyboard shortcuts trigger actions", async () => {
+    const controller = await getController()
+    const playPauseSpy = vi.spyOn(controller, 'playPause')
+    const fullscreenSpy = vi.spyOn(controller, 'toggleFullscreen')
+    const modeSpy = vi.spyOn(controller, 'changeVisualizerMode')
+
+    // Space -> playPause
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }))
+    expect(playPauseSpy).toHaveBeenCalled()
+
+    // KeyF -> toggleFullscreen
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF' }))
+    expect(fullscreenSpy).toHaveBeenCalled()
+
+    // Digit1, 2, 3 -> changeVisualizerMode
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1' }))
+    expect(modeSpy).toHaveBeenCalledWith('particles')
+    
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2' }))
+    expect(modeSpy).toHaveBeenCalledWith('bars')
+    
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3' }))
+    expect(modeSpy).toHaveBeenCalledWith('circle')
+    
+    // Other keys should do nothing
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA' }))
+    expect(playPauseSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test("audio event listeners update UI", async () => {
+    const controller = await getController()
+    const audioEl = controller.audio.audioElement
+    
+    // Get the actual listeners added during initAudio
+    const listeners = {}
+    audioEl.addEventListener.mock.calls.forEach(([event, listener]) => {
+      listeners[event] = listener
+    })
+
+    // timeupdate
+    audioEl.currentTime = 30
+    audioEl.duration = 100
+    listeners['timeupdate']()
+    expect(controller.currentTimeTarget.textContent).toBe("00:30")
+    expect(controller.timelineTarget.style.width).toBe("30%")
+
+    // loadedmetadata
+    audioEl.duration = 125
+    listeners['loadedmetadata']()
+    expect(controller.durationTarget.textContent).toBe("02:05")
+
+    // play
+    listeners['play']()
+    expect(controller.settings.isPlaying).toBe(true)
+    expect(controller.playIconTarget.innerHTML).toContain('path')
+
+    // pause
+    listeners['pause']()
     expect(controller.settings.isPlaying).toBe(false)
   })
 
-  test("updates sensitivity when slider changes", async () => {
-    const el = document.querySelector('[data-controller="visualizer"]')
-    let controller
+  test("p5 sketch lifecycle and draw loop", async () => {
+    const controller = await getController()
     
-    await waitFor(() => {
-      controller = application.getControllerForElementAndIdentifier(el, "visualizer")
-      expect(controller.audio).toBeDefined()
-    })
+    // The p5 mock in setup.js allows us to access the sketch object
+    const sketch = controller.p5.sketch
+    
+    // Test setup
+    sketch.setup()
+    expect(sketch.createCanvas).toHaveBeenCalled()
+    
+    // Test draw
+    sketch.frameCount = 30
+    sketch.draw()
+    expect(sketch.background).toHaveBeenCalledWith(0, 30)
+    expect(controller.particleVisualizer.draw).toHaveBeenCalled()
+    expect(controller.fpsTarget.textContent).toBeDefined()
 
-    const slider = document.querySelector('[data-visualizer-target="sensitivitySlider"]')
-    const valueDisplay = document.querySelector('[data-visualizer-target="sensitivityValue"]')
-    
-    slider.value = 75
-    // Dispatching input event to simulate user change
-    slider.dispatchEvent(new Event("input", { bubbles: true }))
-    
-    // Manually call the action as Stimulus might not pick up the event in JSDOM immediately
-    controller.updateSensitivity({ target: slider })
-    
-    expect(controller.settings.sensitivity).toBe(0.75)
-    expect(valueDisplay.textContent).toBe("75%")
+    // Test windowResized
+    sketch.windowResized()
+    expect(sketch.resizeCanvas).toHaveBeenCalled()
   })
 
-  test("toggles play/pause", async () => {
-    const el = document.querySelector('[data-controller="visualizer"]')
-    let controller
+  test("updateSensitivity updates settings and UI", async () => {
+    const controller = await getController()
+    const event = { target: { value: 80 } }
+    controller.updateSensitivity(event)
     
-    await waitFor(() => {
-      controller = application.getControllerForElementAndIdentifier(el, "visualizer")
-      expect(controller.audio).toBeDefined()
-    })
+    expect(controller.settings.sensitivity).toBe(0.8)
+    expect(controller.sensitivityValueTarget.textContent).toBe("80%")
+  })
+
+  test("changeVisualizer updates mode", async () => {
+    const controller = await getController()
+    const event = { target: { value: 'bars' } }
+    controller.changeVisualizer(event)
     
-    const playSpy = vi.spyOn(controller.audio.audioElement, 'play')
-    const pauseSpy = vi.spyOn(controller.audio.audioElement, 'pause')
+    expect(controller.settings.mode).toBe('bars')
+  })
 
-    // Initial state is paused (audioElement.paused = true)
-    controller.playPause()
-    expect(playSpy).toHaveBeenCalled()
+  test("playPause toggles play and pause and resumes context", async () => {
+    const controller = await getController()
+    
+    // Resume context
+    controller.audio.audioContext.state = 'suspended'
+    controller.audio.audioElement.paused = true
+    await controller.playPause()
+    expect(controller.audio.audioContext.resume).toHaveBeenCalled()
+    expect(controller.audio.audioElement.play).toHaveBeenCalled()
 
-    // Mock it as playing
+    // Toggle to pause
     controller.audio.audioElement.paused = false
-    controller.playPause()
-    expect(pauseSpy).toHaveBeenCalled()
+    await controller.playPause()
+    expect(controller.audio.audioElement.pause).toHaveBeenCalled()
   })
 
-  test("toggles fullscreen", async () => {
-    const el = document.querySelector('[data-controller="visualizer"]')
-    let controller
+  test("toggleFullscreen toggles and handles errors", async () => {
+    const controller = await getController()
+    const el = controller.element
     
-    await waitFor(() => {
-      controller = application.getControllerForElementAndIdentifier(el, "visualizer")
-      expect(controller).not.toBeNull()
-    })
-
+    // Request fullscreen
     const requestSpy = vi.spyOn(el, 'requestFullscreen')
-    const exitSpy = vi.spyOn(document, 'exitFullscreen')
-
-    // Initially not in fullscreen
-    controller.toggleFullscreen()
+    await controller.toggleFullscreen()
     expect(requestSpy).toHaveBeenCalled()
 
-    // Mock document.fullscreenElement to simulate being in fullscreen
+    // Exit fullscreen
+    const exitSpy = vi.spyOn(document, 'exitFullscreen')
     Object.defineProperty(document, 'fullscreenElement', {
       value: el,
       configurable: true
     })
-
     controller.toggleFullscreen()
     expect(exitSpy).toHaveBeenCalled()
 
-    // Clean up
-    Object.defineProperty(document, 'fullscreenElement', {
-      value: null,
-      configurable: true
-    })
+    // Error handling
+    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true })
+    vi.spyOn(el, 'requestFullscreen').mockRejectedValue(new Error("FS Error"))
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    await controller.toggleFullscreen()
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("FS Error"))
   })
 
-  test("changes visualizer mode", async () => {
-    const el = document.querySelector('[data-controller="visualizer"]')
-    let controller
-    
-    await waitFor(() => {
-      controller = application.getControllerForElementAndIdentifier(el, "visualizer")
-      expect(controller).not.toBeNull()
-    })
-
-    const select = document.querySelector('[data-visualizer-target="visualizerSelect"]')
-    select.value = "particles"
-    select.dispatchEvent(new Event("change", { bubbles: true }))
-
-    expect(controller.settings.mode).toBe("particles")
+  test("startUpdateLoop exists", async () => {
+    const controller = await getController()
+    expect(typeof controller.startUpdateLoop).toBe('function')
+    controller.startUpdateLoop()
   })
 })
