@@ -46,3 +46,12 @@ assets-build:
 	docker compose exec web yarn install
 	docker compose exec web yarn build
 	docker compose exec web yarn build:css
+
+colima-stop:
+	colima stop
+
+colima-start:
+	colima start --memory 16
+
+colima-stop-force:
+	colima stop --force
