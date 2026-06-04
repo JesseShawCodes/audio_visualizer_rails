@@ -174,7 +174,7 @@ describe("VisualizerController", () => {
     sketch.frameCount = 30
     sketch.draw()
     expect(sketch.background).toHaveBeenCalledWith(0, 30)
-    expect(controller.particleVisualizer.draw).toHaveBeenCalled()
+    expect(controller.visualizers.particles.draw).toHaveBeenCalled()
     expect(controller.fpsTarget.textContent).toBeDefined()
 
     // Test windowResized
