@@ -1,4 +1,6 @@
-.PHONY: visualizer-start visualizer-stop visualizer-clean visualizer-test visualizer-bash db-bash db-prepare console bundle-install assets-build fix-permissions
+.PHONY: visualizer-start visualizer-stop visualizer-clean visualizer-bash db-bash db-prepare console bundle-install fix-permissions \
+	assets-build build-js build-css logs-js logs-css logs-web \
+	test test-all test-js test-js-coverage lint ci
 
 # Start the application and its dependencies
 visualizer-start:
@@ -12,9 +14,6 @@ visualizer-stop:
 visualizer-clean:
 	docker compose down -v
 	rm -rf app/assets/builds/*
-
-visualizer-test:
-	bin/rails test
 
 # Bash into the running Rails web container
 visualizer-bash:
@@ -41,11 +40,55 @@ bundle-install:
 	docker compose exec web bundle install
 	@echo "Note: If Gemfile.lock didn't update, try running 'make fix-permissions' first."
 
-# Build assets inside the web container (non-watch mode)
-assets-build:
-	docker compose exec web yarn install
-	docker compose exec web yarn build
-	docker compose exec web yarn build:css
+# --- Assets ---
+
+# Build all assets (JS and CSS)
+assets-build: build-js build-css
+
+# Build JS assets manually
+build-js:
+	docker compose exec js yarn build
+
+# Build CSS assets manually
+build-css:
+	docker compose exec css yarn build:css
+
+# View logs for specific services
+logs-js:
+	docker compose logs -f js
+
+logs-css:
+	docker compose logs -f css
+
+logs-web:
+	docker compose logs -f web
+
+# --- Testing & Quality ---
+
+# Run all tests (Rails + JS)
+test-all: test test-js
+
+# Run Rails tests (default test)
+test:
+	docker compose exec web bin/rails test
+
+# Run JavaScript tests (Vitest)
+test-js:
+	docker compose exec js yarn test
+
+# Run JavaScript tests with coverage
+test-js-coverage:
+	docker compose exec js yarn coverage
+
+# Run RuboCop for Ruby styling
+lint:
+	docker compose exec web bin/rubocop
+
+# Run the complete CI suite inside the web container
+ci:
+	docker compose exec web bin/ci
+
+# --- Infrastructure ---
 
 colima-stop:
 	colima stop
