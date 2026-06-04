@@ -2,6 +2,8 @@ import { Controller } from "@hotwired/stimulus"
 import p5 from "p5"
 import AudioEngine from "../audio/audio_engine"
 import ParticleVisualizer from "../visualizers/particle_visualizer"
+import BarsVisualizer from "../visualizers/bars_visualizer"
+import CircleVisualizer from "../visualizers/circle_visualizer"
 
 export default class extends Controller {
   static targets = [
@@ -46,7 +48,9 @@ export default class extends Controller {
   }
 
   changeVisualizerMode(mode) {
-    this.visualizerSelectTarget.value = mode
+    if (this.hasVisualizerSelectTarget) {
+      this.visualizerSelectTarget.value = mode
+    }
     this.settings.mode = mode
     console.log(`Visualizer changed to: ${mode}`)
   }
@@ -71,7 +75,11 @@ export default class extends Controller {
   }
 
   initP5() {
-    this.particleVisualizer = new ParticleVisualizer()
+    this.visualizers = {
+      particles: new ParticleVisualizer(),
+      bars: new BarsVisualizer(),
+      circle: new CircleVisualizer()
+    }
     
     this.p5 = new p5((sketch) => {
       sketch.setup = () => {
@@ -90,7 +98,10 @@ export default class extends Controller {
         // Apply sensitivity to audio data
         const sensitiveData = Array.from(audioData).map(val => val * this.settings.sensitivity * 2)
         
-        this.particleVisualizer.draw(sketch, sensitiveData)
+        const activeVisualizer = this.visualizers[this.settings.mode]
+        if (activeVisualizer) {
+          activeVisualizer.draw(sketch, sensitiveData)
+        }
         
         // Update FPS display occasionally
         if (sketch.frameCount % 30 === 0) {
@@ -128,7 +139,6 @@ export default class extends Controller {
   changeVisualizer(event) {
     this.settings.mode = event.target.value
     console.log(`Visualizer changed to: ${this.settings.mode}`)
-    // In the future, we can switch between different visualizer classes here
   }
 
   toggleFullscreen() {
