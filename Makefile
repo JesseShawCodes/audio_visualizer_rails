@@ -1,6 +1,6 @@
 .PHONY: visualizer-start visualizer-stop visualizer-clean visualizer-bash db-bash db-prepare console bundle-install fix-permissions \
 	assets-build build-js build-css logs-js logs-css logs-web \
-	test test-all test-js test-js-coverage lint ci
+	test test-all test-js test-js-coverage test-coverage lint ci
 
 # Start the application and its dependencies
 visualizer-start:
@@ -78,6 +78,11 @@ test-js:
 
 # Run JavaScript tests with coverage
 test-js-coverage:
+	docker compose exec js yarn coverage
+
+# Run all tests with coverage (Rails + JS)
+test-coverage:
+	docker compose exec web bin/rails test
 	docker compose exec js yarn coverage
 
 # Run RuboCop for Ruby styling
