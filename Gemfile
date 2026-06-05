@@ -57,7 +57,7 @@ group :development, :test do
 
   gem "simplecov", require: false
 
-  gem "rspec-rails", "~> 7.0"
+  gem "rspec-rails", "~> 8.0"
   gem "capybara"
   gem "selenium-webdriver"
 end
