@@ -15,7 +15,15 @@ test:
   database: visualizer_test
 
 production:
-  <<: *default
-  database: visualizer_production
-  username: visualizer
-  password: <%= ENV["VISUALIZER_DATABASE_PASSWORD"] %>
+  primary: &production_primary
+    <<: *default
+    database: <%= ENV.fetch("POSTGRES_DB") { "visualizer_production" } %>
+  cache:
+    <<: *production_primary
+    database: <%= ENV.fetch("POSTGRES_DB") { "visualizer_production" } %>
+  queue:
+    <<: *production_primary
+    database: <%= ENV.fetch("POSTGRES_DB") { "visualizer_production" } %>
+  cable:
+    <<: *production_primary
+    database: <%= ENV.fetch("POSTGRES_DB") { "visualizer_production" } %>
