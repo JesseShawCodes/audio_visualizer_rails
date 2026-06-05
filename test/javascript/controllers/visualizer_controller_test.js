@@ -65,6 +65,9 @@ describe("VisualizerController", () => {
         <div class="progress-bar">
           <div data-visualizer-target="timeline" style="width: 0%;"></div>
         </div>
+        <input type="range" data-visualizer-target="particleSizeSlider" value="3" min="1" max="10">
+        <span data-visualizer-target="particleSizeValue">3</span>
+        <input type="color" data-visualizer-target="colorPicker" value="#4f46e5">
       </div>
     `
     document.body.appendChild(container)
@@ -190,6 +193,25 @@ describe("VisualizerController", () => {
     expect(controller.settings.sensitivity).toBe(0.8)
     expect(controller.sensitivityValueTarget.textContent).toBe("80%")
   })
+
+  test("updateParticleSize updates settings and UI", async () => {
+    const controller = await getController()
+    const event = { target: { value: "5" } }
+    controller.updateParticleSize(event)
+    
+    expect(controller.settings.particleSize).toBe(5)
+    expect(controller.particleSizeValueTarget.textContent).toBe("5")
+  })
+
+  test("updateColor updates settings", async () => {
+    const controller = await getController()
+    const event = { target: { value: "#ff0000" } }
+    controller.updateColor(event)
+    
+    expect(controller.settings.baseColor).toBe("#ff0000")
+  })
+
+
 
   test("changeVisualizer updates mode", async () => {
     const controller = await getController()
