@@ -9,7 +9,8 @@ export default class extends Controller {
   static targets = [
     "canvas", "sensitivitySlider", "sensitivityValue", 
     "visualizerSelect", "fps", "playButton", "playIcon",
-    "currentTime", "duration", "timeline", "colorPicker"
+    "currentTime", "duration", "timeline", "colorPicker",
+    "particleSizeSlider", "particleSizeValue"
   ]
 
   connect() {
@@ -17,7 +18,8 @@ export default class extends Controller {
       sensitivity: 0.5,
       mode: "particles",
       isPlaying: false,
-      baseColor: "#4f46e5" // Default Indigo-600
+      baseColor: "#4f46e5", // Default Indigo-600
+      particleSize: 3
     }
 
     this.initAudio()
@@ -101,7 +103,7 @@ export default class extends Controller {
         
         const activeVisualizer = this.visualizers[this.settings.mode]
         if (activeVisualizer) {
-          activeVisualizer.draw(sketch, sensitiveData, this.settings.baseColor)
+          activeVisualizer.draw(sketch, sensitiveData, this.settings.baseColor, this.settings)
         }
         
         // Update FPS display occasionally
@@ -135,6 +137,12 @@ export default class extends Controller {
     const val = event.target.value
     this.settings.sensitivity = val / 100
     this.sensitivityValueTarget.textContent = `${val}%`
+  }
+
+  updateParticleSize(event) {
+    const val = event.target.value
+    this.settings.particleSize = parseFloat(val)
+    this.particleSizeValueTarget.textContent = val
   }
 
   changeVisualizer(event) {

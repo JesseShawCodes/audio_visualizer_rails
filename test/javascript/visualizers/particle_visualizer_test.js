@@ -43,6 +43,7 @@ describe('ParticleVisualizer', () => {
   it('initializes with default values', () => {
     expect(visualizer.particles).toEqual([])
     expect(visualizer.numParticles).toBe(100)
+    expect(visualizer.baseParticleSize).toBe(3)
   })
 
   it('initializes particles on first draw', () => {
@@ -56,7 +57,6 @@ describe('ParticleVisualizer', () => {
     const p = visualizer.particles[0]
     expect(p).toHaveProperty('x')
     expect(p).toHaveProperty('y')
-    expect(p).toHaveProperty('size')
     expect(p).toHaveProperty('vx')
     expect(p).toHaveProperty('vy')
   })
@@ -103,5 +103,17 @@ describe('ParticleVisualizer', () => {
     // Inner pulse: 150 * 1.5 = 225
     expect(mockSketch.circle).toHaveBeenCalledWith(0, 0, 450)
     expect(mockSketch.circle).toHaveBeenCalledWith(0, 0, 225)
+  })
+
+  it('updates particle size from settings', () => {
+    const audioData = [0]
+    const settings = { particleSize: 8 }
+    
+    visualizer.draw(mockSketch, audioData, '#4f46e5', settings)
+    
+    expect(visualizer.baseParticleSize).toBe(8)
+    // circle(x, y, baseParticleSize + (avg * 0.05))
+    // avg = 0, so size should be 8
+    expect(mockSketch.circle).toHaveBeenCalledWith(expect.any(Number), expect.any(Number), 8)
   })
 })

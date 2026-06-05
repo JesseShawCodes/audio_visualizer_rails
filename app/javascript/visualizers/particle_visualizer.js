@@ -2,12 +2,17 @@ export default class ParticleVisualizer {
   constructor() {
     this.particles = []
     this.numParticles = 100
+    this.baseParticleSize = 3
   }
 
-  draw(sketch, audioData, baseColor = "#4f46e5") {
+  draw(sketch, audioData, baseColor = "#4f46e5", settings = {}) {
     const avg = audioData.length > 0 
       ? audioData.reduce((a, b) => a + b, 0) / audioData.length 
       : 0
+
+    if (settings.particleSize !== undefined) {
+      this.baseParticleSize = settings.particleSize
+    }
 
     const c = sketch.color(baseColor)
     const targetColor = sketch.color(255, 255, 255)
@@ -18,7 +23,6 @@ export default class ParticleVisualizer {
         this.particles.push({
           x: sketch.random(sketch.width),
           y: sketch.random(sketch.height),
-          size: sketch.random(2, 5),
           vx: sketch.random(-0.5, 0.5),
           vy: sketch.random(-0.5, 0.5)
         })
@@ -44,7 +48,7 @@ export default class ParticleVisualizer {
       const col = sketch.lerpColor(c, targetColor, interpolation)
       
       sketch.fill(sketch.red(col), sketch.green(col), sketch.blue(col), glow)
-      sketch.circle(p.x, p.y, p.size + (avg * 0.05))
+      sketch.circle(p.x, p.y, this.baseParticleSize + (avg * 0.05))
     })
 
     // Draw central reactive pulse
