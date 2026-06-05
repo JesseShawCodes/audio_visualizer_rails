@@ -4,10 +4,13 @@ export default class ParticleVisualizer {
     this.numParticles = 100
   }
 
-  draw(sketch, audioData) {
+  draw(sketch, audioData, baseColor = "#4f46e5") {
     const avg = audioData.length > 0 
       ? audioData.reduce((a, b) => a + b, 0) / audioData.length 
       : 0
+
+    const c = sketch.color(baseColor)
+    const targetColor = sketch.color(255, 255, 255)
 
     // Initialize particles if they don't exist
     if (this.particles.length === 0) {
@@ -37,7 +40,10 @@ export default class ParticleVisualizer {
 
       // Particle color glows based on audio
       const glow = sketch.map(avg, 0, 255, 50, 255)
-      sketch.fill(100, 150, 255, glow)
+      const interpolation = sketch.map(avg, 0, 255, 0, 0.5)
+      const col = sketch.lerpColor(c, targetColor, interpolation)
+      
+      sketch.fill(sketch.red(col), sketch.green(col), sketch.blue(col), glow)
       sketch.circle(p.x, p.y, p.size + (avg * 0.05))
     })
 
@@ -46,11 +52,12 @@ export default class ParticleVisualizer {
     sketch.translate(sketch.width / 2, sketch.height / 2)
     
     // Outer glow
-    sketch.fill(79, 70, 229, 20) // Indigo-600 with low alpha
+    sketch.fill(sketch.red(c), sketch.green(c), sketch.blue(c), 20)
     sketch.circle(0, 0, avg * 3)
     
     // Inner pulse
-    sketch.fill(129, 140, 248, 150) // Indigo-400
+    const innerCol = sketch.lerpColor(c, targetColor, 0.3)
+    sketch.fill(sketch.red(innerCol), sketch.green(innerCol), sketch.blue(innerCol), 150)
     sketch.circle(0, 0, avg * 1.5)
     sketch.pop()
   }

@@ -23,6 +23,20 @@ describe('ParticleVisualizer', () => {
       push: vi.fn(),
       pop: vi.fn(),
       translate: vi.fn(),
+      color: vi.fn((r, g, b) => {
+        if (typeof r === 'string') return { r: 79, g: 70, b: 229 } // Mock hex to RGB
+        return { r: r || 0, g: g || 0, b: b || 0 }
+      }),
+      lerpColor: vi.fn((c1, c2, amt) => {
+        return {
+          r: c1.r + (c2.r - c1.r) * amt,
+          g: c1.g + (c2.g - c1.g) * amt,
+          b: c1.b + (c2.b - c1.b) * amt,
+        }
+      }),
+      red: vi.fn(c => c.r),
+      green: vi.fn(c => c.g),
+      blue: vi.fn(c => c.b),
     }
   })
 
@@ -33,7 +47,7 @@ describe('ParticleVisualizer', () => {
 
   it('initializes particles on first draw', () => {
     const audioData = new Uint8Array([0, 0, 0])
-    visualizer.draw(mockSketch, audioData)
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
     
     expect(visualizer.particles.length).toBe(100)
     expect(mockSketch.random).toHaveBeenCalled()
@@ -49,40 +63,40 @@ describe('ParticleVisualizer', () => {
 
   it('updates particle positions and wraps them around the screen', () => {
     const audioData = new Uint8Array([100]) // avg = 100
-    visualizer.draw(mockSketch, audioData) // init
+    visualizer.draw(mockSketch, audioData, '#4f46e5') // init
 
     // Force a particle to the edge to test wrapping
     const p = visualizer.particles[0]
     
     // Test left wrap
     p.x = -1
-    visualizer.draw(mockSketch, audioData)
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
     expect(p.x).toBe(mockSketch.width)
 
     // Test right wrap
     p.x = mockSketch.width + 1
-    visualizer.draw(mockSketch, audioData)
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
     expect(p.x).toBe(0)
 
     // Test top wrap
     p.y = -1
-    visualizer.draw(mockSketch, audioData)
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
     expect(p.y).toBe(mockSketch.height)
 
     // Test bottom wrap
     p.y = mockSketch.height + 1
-    visualizer.draw(mockSketch, audioData)
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
     expect(p.y).toBe(0)
   })
 
   it('draws reactive pulse and handles empty audio data', () => {
     // Empty audio data
-    visualizer.draw(mockSketch, [])
+    visualizer.draw(mockSketch, [], '#4f46e5')
     expect(mockSketch.circle).toHaveBeenCalledWith(0, 0, 0) // pulse size 0
 
     // Reactive audio data
     const audioData = [100, 200] // avg = 150
-    visualizer.draw(mockSketch, audioData)
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
     
     expect(mockSketch.translate).toHaveBeenCalledWith(400, 300)
     // Outer pulse: 150 * 3 = 450

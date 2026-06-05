@@ -9,14 +9,15 @@ export default class extends Controller {
   static targets = [
     "canvas", "sensitivitySlider", "sensitivityValue", 
     "visualizerSelect", "fps", "playButton", "playIcon",
-    "currentTime", "duration", "timeline"
+    "currentTime", "duration", "timeline", "colorPicker"
   ]
 
   connect() {
     this.settings = {
       sensitivity: 0.5,
       mode: "particles",
-      isPlaying: false
+      isPlaying: false,
+      baseColor: "#4f46e5" // Default Indigo-600
     }
 
     this.initAudio()
@@ -100,7 +101,7 @@ export default class extends Controller {
         
         const activeVisualizer = this.visualizers[this.settings.mode]
         if (activeVisualizer) {
-          activeVisualizer.draw(sketch, sensitiveData)
+          activeVisualizer.draw(sketch, sensitiveData, this.settings.baseColor)
         }
         
         // Update FPS display occasionally
@@ -139,6 +140,11 @@ export default class extends Controller {
   changeVisualizer(event) {
     this.settings.mode = event.target.value
     console.log(`Visualizer changed to: ${this.settings.mode}`)
+  }
+
+  updateColor(event) {
+    this.settings.baseColor = event.target.value
+    console.log(`Color changed to: ${this.settings.baseColor}`)
   }
 
   toggleFullscreen() {

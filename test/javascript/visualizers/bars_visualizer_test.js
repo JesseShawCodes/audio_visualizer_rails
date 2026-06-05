@@ -19,12 +19,26 @@ describe('BarsVisualizer', () => {
       map: vi.fn((val, start1, stop1, start2, stop2) => {
         return ((val - start1) / (stop1 - start1)) * (stop2 - start2) + start2
       }),
+      color: vi.fn((r, g, b) => {
+        if (typeof r === 'string') return { r: 79, g: 70, b: 229 } // Mock hex to RGB
+        return { r: r || 0, g: g || 0, b: b || 0 }
+      }),
+      lerpColor: vi.fn((c1, c2, amt) => {
+        return {
+          r: c1.r + (c2.r - c1.r) * amt,
+          g: c1.g + (c2.g - c1.g) * amt,
+          b: c1.b + (c2.b - c1.b) * amt,
+        }
+      }),
+      red: vi.fn(c => c.r),
+      green: vi.fn(c => c.g),
+      blue: vi.fn(c => c.b),
     }
   })
 
   it('draws bars based on audio data', () => {
     const audioData = new Uint8Array([0, 127, 255])
-    visualizer.draw(mockSketch, audioData)
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
 
     expect(mockSketch.push).toHaveBeenCalled()
     expect(mockSketch.translate).toHaveBeenCalledWith(0, 600)
@@ -50,20 +64,22 @@ describe('BarsVisualizer', () => {
     expect(mockSketch.pop).toHaveBeenCalled()
   })
 
-  it('applies gradient colors based on index', () => {
+  it('applies colors using lerpColor', () => {
     const audioData = new Uint8Array([100, 200])
-    visualizer.draw(mockSketch, audioData)
+    // Use a fixed base color for testing
+    visualizer.draw(mockSketch, audioData, '#4f46e5')
 
-    // First bar colors (i=0, len=2)
-    // r = map(0, 0, 2, 79, 168) = 79
-    // g = map(0, 0, 2, 70, 85) = 70
-    // b = map(0, 0, 2, 229, 247) = 229
+    // First bar (i=0, len=2)
+    // interpolation = map(0, 0, 2, 0, 0.5) = 0
+    // col = lerpColor({r:79, g:70, b:229}, {r:255, g:255, b:255}, 0) = {r:79, g:70, b:229}
     expect(mockSketch.fill).toHaveBeenNthCalledWith(1, 79, 70, 229, 200)
 
-    // Second bar colors (i=1, len=2)
-    // r = map(1, 0, 2, 79, 168) = 79 + (168-79)/2 = 123.5
-    // g = map(1, 0, 2, 70, 85) = 70 + (85-70)/2 = 77.5
-    // b = map(1, 0, 2, 229, 247) = 229 + (247-229)/2 = 238
-    expect(mockSketch.fill).toHaveBeenNthCalledWith(2, 123.5, 77.5, 238, 200)
+    // Second bar (i=1, len=2)
+    // interpolation = map(1, 0, 2, 0, 0.5) = 0.25
+    // col = lerpColor({r:79, g:70, b:229}, {r:255, g:255, b:255}, 0.25)
+    // r = 79 + (255-79)*0.25 = 79 + 44 = 123
+    // g = 70 + (255-70)*0.25 = 70 + 46.25 = 116.25
+    // b = 229 + (255-229)*0.25 = 229 + 6.5 = 235.5
+    expect(mockSketch.fill).toHaveBeenNthCalledWith(2, 123, 116.25, 235.5, 200)
   })
 })
