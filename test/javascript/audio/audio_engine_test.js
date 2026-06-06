@@ -57,6 +57,19 @@ describe('AudioEngine', () => {
     expect(mockContext.resume).toHaveBeenCalled()
   })
 
+  it('loadFile does not resume if AudioContext is running', async () => {
+    const engine = new AudioEngine()
+    const mockFile = new File([''], 'test.mp3', { type: 'audio/mp3' })
+    vi.spyOn(engine.audioElement, 'play').mockResolvedValue()
+    
+    const mockContext = vi.mocked(global.AudioContext).mock.results[0].value
+    mockContext.state = 'running'
+    
+    await engine.loadFile(mockFile)
+    
+    expect(mockContext.resume).not.toHaveBeenCalled()
+  })
+
   it('handles autoplay prevention', async () => {
     const engine = new AudioEngine()
     const mockFile = new File([''], 'test.mp3', { type: 'audio/mp3' })
@@ -66,6 +79,7 @@ describe('AudioEngine', () => {
     await engine.loadFile(mockFile)
     
     expect(warnSpy).toHaveBeenCalledWith("Autoplay was prevented. User must click play.")
+    warnSpy.mockRestore()
   })
 
   it('getData updates and returns dataArray', () => {
