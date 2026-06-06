@@ -3,7 +3,6 @@ export default class AudioEngine {
     this.audioContext = new AudioContext()
 
     this.audioElement = new Audio()
-    this.audioElement.src = "/audio/piano_song.mp3"
     
     this.source = this.audioContext.createMediaElementSource(this.audioElement)
     
@@ -14,6 +13,22 @@ export default class AudioEngine {
     this.analyser.connect(this.audioContext.destination)
 
     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount)
+  }
+
+  async loadFile(file) {
+    const url = URL.createObjectURL(file)
+    this.audioElement.src = url
+    
+    // Some browsers require a user interaction to start the audio context
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume()
+    }
+
+    try {
+      await this.audioElement.play()
+    } catch (e) {
+      console.warn("Autoplay was prevented. User must click play.")
+    }
   }
 
   getData() {

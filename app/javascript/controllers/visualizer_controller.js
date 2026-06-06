@@ -10,7 +10,7 @@ export default class extends Controller {
     "canvas", "sensitivitySlider", "sensitivityValue", 
     "visualizerSelect", "fps", "playButton", "playIcon",
     "currentTime", "duration", "timeline", "colorPicker",
-    "particleSizeSlider", "particleSizeValue"
+    "particleSizeSlider", "particleSizeValue", "fileName"
   ]
 
   connect() {
@@ -25,6 +25,30 @@ export default class extends Controller {
     this.initAudio()
     this.initP5()
     this.initShortcuts()
+    
+    // Load default song if needed, or wait for user input
+    this.audio.audioElement.src = "/audio/piano_song.mp3"
+  }
+
+  loadAudio(event) {
+    const file = event.target?.files?.[0] || event.dataTransfer?.files?.[0]
+    if (!file) return
+
+    if (this.hasFileNameTarget) {
+      this.fileNameTarget.textContent = file.name
+    }
+
+    this.audio.loadFile(file)
+  }
+
+  dragOver(event) {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+  }
+
+  drop(event) {
+    event.preventDefault()
+    this.loadAudio(event)
   }
 
   disconnect() {

@@ -14,6 +14,7 @@ vi.mock("../../../app/javascript/audio/audio_engine", () => {
           resume: vi.fn().mockResolvedValue(),
         }
         this.audioElement = {
+          src: '',
           addEventListener: vi.fn(),
           removeEventListener: vi.fn(),
           play: vi.fn().mockResolvedValue(),
@@ -23,6 +24,7 @@ vi.mock("../../../app/javascript/audio/audio_engine", () => {
           currentTime: 0,
         }
       }
+      loadFile = vi.fn().mockResolvedValue()
       getData() {
         return new Uint8Array([10, 20, 30])
       }
@@ -50,6 +52,8 @@ describe("VisualizerController", () => {
     container.innerHTML = `
       <div data-controller="visualizer">
         <div data-visualizer-target="canvas" style="width: 800px; height: 600px;"></div>
+        <input type="file" data-action="change->visualizer#loadAudio">
+        <span data-visualizer-target="fileName">piano_song.mp3</span>
         <input type="range" data-visualizer-target="sensitivitySlider" value="50">
         <span data-visualizer-target="sensitivityValue">50%</span>
         <select data-visualizer-target="visualizerSelect" data-action="change->visualizer#changeVisualizer">
@@ -95,11 +99,23 @@ describe("VisualizerController", () => {
     const removeEventSpy = vi.spyOn(document, 'removeEventListener')
 
     expect(controller.settings.sensitivity).toBe(0.5)
+    expect(controller.audio.audioElement.src).toContain("/audio/piano_song.mp3")
     
     // Test disconnect
     controller.disconnect()
     expect(p5RemoveSpy).toHaveBeenCalled()
     expect(removeEventSpy).toHaveBeenCalledWith('keydown', controller.handleKeydown)
+  })
+
+  test("loadAudio updates UI and calls engine", async () => {
+    const controller = await getController()
+    const mockFile = new File([''], 'user-song.mp3', { type: 'audio/mp3' })
+    const event = { target: { files: [mockFile] } }
+    
+    await controller.loadAudio(event)
+    
+    expect(controller.fileNameTarget.textContent).toBe('user-song.mp3')
+    expect(controller.audio.loadFile).toHaveBeenCalledWith(mockFile)
   })
 
   test("keyboard shortcuts trigger actions", async () => {
@@ -211,7 +227,45 @@ describe("VisualizerController", () => {
     expect(controller.settings.baseColor).toBe("#ff0000")
   })
 
+  test("loadAudio handles no file", async () => {
+    const controller = await getController()
+    const event = { target: { files: [] } }
+    await controller.loadAudio(event)
+    expect(controller.audio.loadFile).not.toHaveBeenCalled()
+  })
 
+  test("loadAudio handles dataTransfer", async () => {
+    const controller = await getController()
+    const mockFile = new File([''], 'drag-song.mp3', { type: 'audio/mp3' })
+    const event = { dataTransfer: { files: [mockFile] } }
+    
+    await controller.loadAudio(event)
+    
+    expect(controller.fileNameTarget.textContent).toBe('drag-song.mp3')
+    expect(controller.audio.loadFile).toHaveBeenCalledWith(mockFile)
+  })
+
+  test("dragOver sets dropEffect", async () => {
+    const controller = await getController()
+    const event = {
+      preventDefault: vi.fn(),
+      dataTransfer: { dropEffect: '' }
+    }
+    controller.dragOver(event)
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(event.dataTransfer.dropEffect).toBe('copy')
+  })
+
+  test("drop calls loadAudio", async () => {
+    const controller = await getController()
+    const loadAudioSpy = vi.spyOn(controller, 'loadAudio').mockImplementation(() => {})
+    const event = {
+      preventDefault: vi.fn()
+    }
+    controller.drop(event)
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(loadAudioSpy).toHaveBeenCalledWith(event)
+  })
 
   test("changeVisualizer updates mode", async () => {
     const controller = await getController()
